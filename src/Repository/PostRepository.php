@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Post;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -22,14 +23,26 @@ class PostRepository extends ServiceEntityRepository
     /**
      * @return Post[]
      */
-    public function getPosts(): array
+    public function getPostsByGetResult(): array
+    {
+        return $this->baseQuery()->getResult();
+    }
+
+    /**
+     * @return Post[]
+     */
+    public function getPostsByGetArrayResult(): array
+    {
+        return $this->baseQuery()->getArrayResult();
+    }
+
+
+    private function baseQuery(): Query
     {
         return $this->createQueryBuilder('p')
-            ->addSelect('p', 'u', 'up')
-            ->leftJoin('p.user', 'u')
+            ->addSelect('u', 'up')
+            ->join('p.user', 'u')
             ->leftJoin('u.posts', 'up', 'WITH', 'p.type = up.type')
-            ->getQuery()
-            ->getResult()
-        ;
+            ->getQuery();
     }
 }

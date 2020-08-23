@@ -5,44 +5,33 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\PostRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ExampleController extends AbstractController
 {
     /**
-     * @Route("/example", name="example")
+     * @Route("/first", name="first")
      */
-    public function index(PostRepository $postRepository)
+    public function first(PostRepository $postRepository, SerializerInterface $serializer)
     {
-        $posts = $postRepository->getPosts();
-
-        $data = [];
-
-        foreach ($posts as $post) {
-            /** @var User $user */
-            $user = $post->getUser();
-
-            $userPosts = [];
-            foreach ($user->getPosts() as $userPost) {
-                $userPosts[] = [
-                    'id' => $userPost->getId(),
-                    'title' => $userPost->getTitle(),
-                    'type' => $userPost->getType(),
-                ];
+        $data =   $serializer->serialize($postRepository->getPostsByGetResult(), 'json', [
+            'circular_reference_limit' => 2,
+            'circular_reference_handler' => static function ($object) {
+                return $object->getId();
             }
+        ]);
 
-            $data[] = [
-                'id' => $post->getId(),
-                'title' => $post->getTitle(),
-                'type' => $post->getType(),
-                'user' => [
-                    'id' => $user->getId(),
-                    'posts' => $userPosts
-                ]
-            ];
-        }
+        return new Response($data, Response::HTTP_OK, ['Content-type' => 'application/json']);
+    }
 
-
-        return $this->json($data);
+    /**
+     * @Route("/second", name="second")
+     */
+    public function second(PostRepository $postRepository)
+    {
+        return $this->json($postRepository->getPostsByGetArrayResult());
     }
 }
